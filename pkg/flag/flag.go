@@ -9,7 +9,7 @@ import (
 )
 
 // ExtractGocFlags parses all GOC flags, and left only go build/run/install flags/args
-func ExtractGocFlags(cmd *cobra.Command, args []string) {
+func ExtractGocFlags(cmd *cobra.Command, args []string) []string {
 	gocFlags := make(map[string]*pflag.Flag)
 	cmd.Flags().VisitAll(func(f *pflag.Flag) {
 		gocFlags[f.Name] = f
@@ -23,33 +23,48 @@ func ExtractGocFlags(cmd *cobra.Command, args []string) {
 		}
 		newfset.Var(gocFlags[k].Value, k, "")
 	}
-	// newfset.ParseErrorsWhitelist = pflag.ParseErrorsWhitelist{UnknownFlags: true}
+	//newfset.ParseErrorsWhitelist = pflag.ParseErrorsWhitelist{UnknownFlags: true}
 	newfset.Parse(args)
 
-	argsWithoutGoc := args[:len(newfset.Args())]
-	removeGocFlags(gocFlags, argsWithoutGoc)
-	argsWithoutGoc = append(argsWithoutGoc, newfset.Args()...)
+	goArgs := make([]string, len(newfset.Args()))
+	copy(goArgs, newfset.Args())
+	argsWithoutGoc := removeGocFlags(gocFlags, args[:len(args)-len(goArgs)])
+	argsWithoutGoc = append(argsWithoutGoc, goArgs...)
+	//fmt.Println(argsWithoutGoc)
+
+	return argsWithoutGoc
 }
 
-func removeGocFlags(gocFlags map[string]*pflag.Flag, args []string) {
-	for k, v := range gocFlags {
-		// fmt.Println(k, v.Value, v.Value.Type())
-		for i := len(args) - 1; i >= 0; i-- {
+func removeGocFlags(gocFlags map[string]*pflag.Flag, args []string) []string {
+	newArgs := make([]string, 0)
+	for i := len(args) - 1; i >= 0; i-- {
+		for k, v := range gocFlags {
 			// if there is goc flags in the arguments, "-xxx" like
 			if strings.Contains(args[i], "-"+k) {
 				switch v.Value.Type() {
 				case "bool":
-					args = append(args[:i], args[i+1:]...)
+					args[i] = ""
 				default:
 					if strings.Contains(args[i], "-"+k+"=") {
-						args = append(args[:i], args[i+1:]...)
+						args[i] = ""
 					} else {
-						args = append(args[:i], args[i+2:]...)
+						args[i] = ""
+						if i+1 < len(args) {
+							args[i+1] = ""
+						}
 					}
 				}
 			}
 		}
 	}
+
+	for i := 0; i < len(args); i++ {
+		if args[i] != "" {
+			newArgs = append(newArgs, args[i])
+		}
+	}
+
+	return newArgs
 }
 
 func removeIndex(s []string, index int) []string {
