@@ -25,6 +25,7 @@ import (
 
 	"github.com/qiniu/goc/pkg/build"
 	"github.com/qiniu/goc/pkg/cover"
+	"github.com/qiniu/goc/pkg/flag"
 	"github.com/spf13/cobra"
 )
 
@@ -47,15 +48,24 @@ goc install --center=http://127.0.0.1:7777
 goc build -- -ldflags "-extldflags -static" -tags="embed kodo"
 `,
 	Run: func(cmd *cobra.Command, args []string) {
+		argsWithoutGoc, goArgs := flag.ExtractGocFlags(cmd, args)
+		fmt.Println("without goc flags: ", argsWithoutGoc)
+		fmt.Println("withou goc/go flag: ", goArgs)
+		fmt.Println("center value: ", center)
+		fmt.Println("debugGoc value: ", debugGoc)
+		return
 		newgopath, newwd, tmpdir, pkgs := build.MvProjectsToTmp(target, args)
 		doCover(cmd, args, newgopath, tmpdir)
 		doInstall(args, newgopath, newwd, pkgs)
 	},
 }
 
+var debugGoc bool
+
 func init() {
 	installCmd.Flags().StringVarP(&center, "center", "", "http://127.0.0.1:7777", "cover profile host center")
-
+	installCmd.Flags().BoolVarP(&debugGoc, "debuggoc", "", false, "turn goc in debug mode")
+	installCmd.DisableFlagParsing = true
 	rootCmd.AddCommand(installCmd)
 }
 
