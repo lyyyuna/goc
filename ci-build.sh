@@ -12,7 +12,7 @@ NAME="${NAME:-${PROJECT_NAME}_${RELEASE_NAME}}_${GOOS}_${GOARCH}"
 
 go build .
 
-ARCHIVE=tmp.tgz
+ARCHIVE=tmp.tar.gz
 FILE_LIST=goc
 tar cvfz $ARCHIVE ${FILE_LIST}
 
