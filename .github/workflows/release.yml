@@ -1,6 +1,6 @@
 on: 
   release:
-    types: [published,edited]
+    types: [created,published,edited]
 name: Build Release
 jobs:
   release-linux-amd64:
